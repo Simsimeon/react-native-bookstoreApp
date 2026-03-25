@@ -1,22 +1,32 @@
 import jwt from "jsonwebtoken"
 import User from '../../models/User.js'
 
-const protectedRoutes= async (req,res,next)=>{
-    try{
+const protectedRoutes = async (req, res, next) => {
+    try {
+        const authHeader = req.header("Authorization");
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            return res.status(401).json({ message: "No token, authorization denied" });
+        }
+
         //  get token
-        const token=req.header("Authorization").replace("Bear","")
-    if(!token) return res.status(401).json({message:"No authentication token, access denied"})
+        const token = authHeader.replace("Bearer ", "")
+        if (!token) return res.status(401).json({ message: "No authentication token, access denied" })
         // verify token
-    const decoded=jwt.verify(token,process.env.JWT_SECRET)
-    // find user
-    const user= await User.findById(decoded.userId).select("-password");
-    if(!user) return res.status(401).json({message:"Token is not valid"})
-      req.user = user  
-    next()
-    }catch(err){
-        console.log("Authentication error",err.message);
-        res.status(401).json({message:"Token is not valid"})
-        
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+        console.log("JWT_SECRET", process.env.JWT_SECRET);
+
+        // find user 
+
+        const user = await User.findById(decoded.userId).select("-password");
+        console.log("user", user);
+
+        if (!user) return res.status(401).json({ message: "Token is not here now valid" })
+        req.user = user
+        next()
+    } catch (err) {
+        console.log("Authentication error", err.message);
+        res.status(401).json({ message: "Token noooooohhh" })
+
     }
 
 

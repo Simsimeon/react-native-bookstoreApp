@@ -3,91 +3,91 @@ import User from "../../models/User.js"
 import jwt from "jsonwebtoken"
 
 
-const router=express.Router()
-const generateToken=(userId)=>{
- return jwt.sign({userId},process.env.JWT_SECRET,{expiresIn:"15d"})
+const router = express.Router()
+const generateToken = (userId) => {
+    return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "15d" })
 }
-router.post("/register",async(req,res)=>{
- try{
-     const {email,username,password} =req.body;
-     if(!email || !username || !password){
-         return res.status(400).json({message: "All fields are required"})
-     }
-     if(password.length <7){
-        return res.status(400).json({
-            message:"Password should be at least 7 character long"
-        })
-     }
-     if(username.length <3){
-        return res.status(400).json({
-            message:"username should be 3 character long"
-        })
-     }
+router.post("/register", async (req, res) => {
+    try {
+        const { email, username, password } = req.body;
+        if (!email || !username || !password) {
+            return res.status(400).json({ message: "All fields are required" })
+        }
+        if (password.length < 7) {
+            return res.status(400).json({
+                message: "Password should be at least 7 character long"
+            })
+        }
+        if (username.length < 3) {
+            return res.status(400).json({
+                message: "username should be 3 character long"
+            })
+        }
 
-//    const existingUser=  await User.findOne({$or:[{email},{username}]})
-//    if(existingUser) return res.status(400).json(
-//     {message:"user already exits "})
-  const existingEmail=  await User.findOne({email})
-if(existingEmail){
-     return res.status(400).json(
-    {message:"email already exits "})
-}
- const existingUserName=  await User.findOne({username})
-if(existingUserName){
-     return res.status(400).json(
-     {message:"username already exits "})
-}
- 
-const profileImage = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+        //    const existingUser=  await User.findOne({$or:[{email},{username}]})
+        //    if(existingUser) return res.status(400).json(
+        //     {message:"user already exits "})
+        const existingEmail = await User.findOne({ email })
+        if (existingEmail) {
+            return res.status(400).json(
+                { message: "email already exits " })
+        }
+        const existingUserName = await User.findOne({ username })
+        if (existingUserName) {
+            return res.status(400).json(
+                { message: "username already exits " })
+        }
 
-const user = new User({
-    email,
-    username,
-    password,
-    profileImage,
-})
-await user.save() 
-const token= generateToken(user._id)
-res.status(201).json({
-    token,
-    user:{
-       id: user._id, 
-       username:user.username,
-       email:user.email,
-       profileImage: user.profileImage
+        const profileImage = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+
+        const user = new User({
+            email,
+            username,
+            password,
+            profileImage,
+        })
+        await user.save()
+        const token = generateToken(user._id)
+        res.status(201).json({
+            token,
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                profileImage: user.profileImage
+            }
+        })
+    } catch (err) {
+        console.log("Error in register route", err);
+        res.status(500).json({ message: "Internal server error" })
+
+
     }
 })
- }catch(err){
-    console.log("Error in register route",err);
-    res.status(500).json({message:"Internal server error"})
-    
+router.post("/login", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) return res.status(400).json({ message: "All field are required" })
+        //    check for existing users
+        const user = await User.findOne({ email })
+        if (!user) return res.status(400).json({ message: "Invalid credentials" })
+        const isPasswordCorrect = await user.comparePassword(password)
+        if (!isPasswordCorrect) return res.status(400).json({ message: "Invalid credentials" })
+        // generate token
+        const token = generateToken(user._id);
+        res.status(200).json({
+            token,
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                profileImage: user.profileImage
+            },
+        })
+    } catch (err) {
+        console.log("Error in login route", err);
+        res.status(500).json({ message: "Internal server error" })
 
- }
-})
-router.post("/login",async(req,res)=>{
-   try{
-   const  {email,password} = req.body;
-   if(!email || !password)return res.status(400).json({message:"All field are required"})
-//    check for existing users
-   const user= await User.findOne({email})
-   if(!user)return res.status(400).json({message: "Invalid credentials"})
-    const isPasswordCorrect= await user.comparePassword(password)
-if(!isPasswordCorrect) return res.status(400).json({message:"Invalid credentials"})
-    // generate token
-const token = generateToken(user._id);
-res.status(200).json({
-    token,
-    user:{
-       id: user._id, 
-       username:user.username,
-       email:user.email,
-       profileImage: user.profileImage
-    },
-   })
- }catch(err){
-console.log("Error in login route",err);
-res.status(500).json({message:"Internal server error"})
-
-   }
+    }
 })
 export default router

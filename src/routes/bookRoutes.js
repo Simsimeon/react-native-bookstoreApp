@@ -32,7 +32,7 @@ router.get("/", protectedRoutes, async (req, res) => {
         const limit = parseInt(req.query.limit) || 5;
         const skip = (page - 1) * limit;
         const books = await Book.find()
-            .sort({ created: -1 })  //descending order
+            .sort({ createdAt: -1 })  //descending order
             .skip(skip)
             .limit(limit)
             .populate("user", "username profileImage")
